@@ -1,0 +1,91 @@
+---
+title: "Assignment Week -4"
+author: "Habib Abdullah"
+date: "8/5/2020"
+output: html_document
+---
+
+```{r}
+# Given Data
+trainset <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"))
+testset <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"))
+```
+
+```{r}
+library(caret)
+library(randomForest)
+```
+
+```{r}
+dim(trainset)
+dim(testset)
+
+```
+
+```{r}
+sum(is.na(trainset))
+NA_variables <- sapply(trainset, function(x) mean(is.na(x))) > 0.95
+
+trainset <- trainset[,NA_variables==FALSE]
+testset <- testset[,NA_variables==F]
+
+dim(trainset)
+dim(testset)
+```
+
+```{r}
+#Removing variables with nearly zero varience.
+zero_var <- nearZeroVar(trainset)
+
+
+trainset <- trainset[,-zero_var]
+testset <- testset[,-zero_var]
+
+dim(trainset)
+dim(testset)
+```
+```{r}
+# Removing categorical variables
+head(trainset)
+trainset <- trainset[,8:59]
+testset <- testset[,8:59]
+
+dim(trainset)
+dim(testset)
+```
+
+
+# Data Split-out
+```{r}
+inTrain <- createDataPartition(trainset$classe, p=0.7, list=FALSE)
+training <- trainset[inTrain,]
+testing <- trainset[-inTrain,]
+
+dim(training)
+dim(testing)
+```
+
+
+#Random Forest model
+```{r}
+RF <- randomForest(classe~., data= training)
+print(RF)
+
+RF_pred <-predict(RF, testing)
+RF_pred_conf <- confusionMatrix(RF_pred, testing$classe)
+RF_pred_conf
+```
+
+```{r}
+# Model Result Visualization
+plot(RF_pred_conf$table, col = RF_pred_conf$byClass, 
+     main = paste("Random Forest - Accuracy Level =",
+                  round(RF_pred_conf$overall['Accuracy'], 4)))
+```
+
+# Model Application on Test dataset
+```{r}
+RF_final <- predict(RF, testset)
+RF_final
+```
+
